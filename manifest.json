@@ -1,0 +1,11 @@
+{
+    "name": "聊天室",
+    "icons": [
+      {
+        "src": "icons/515.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "display" : "standalone"
+}
