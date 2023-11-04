@@ -2,16 +2,32 @@ const doButton = document.getElementById("dododo");
 const outputArea = document.getElementById("output");
 const userMsg = document.getElementById("user_msg");
 const sendButton = document.getElementById("send_msg");
+const myUsrNameInput = document.getElementById("myUsrName");
 
+//输出用的缓冲区
 var outputHtml = "";
+//存储key的对象，之后需要结合一下本地存储
 var myLocalKey = {};
-
+//初始化mqtt的客户端
 var client = mqtt.connect('wss://test.mosquitto.org:8081');
-
+//订阅的频道
 client.subscribe("/");
+//自己的用户名
+var myUsrName = "";
+//尝试从缓存中恢复本机的用户名
+if(localStorage["myUsrName"]!=null){
+    myUsrName=localStorage["myUsrName"];
+    myUsrNameInput.value = myUsrName;
+}else{
+
+}
+//尝试设置自己的用户名
+myUsrNameInput.addEventListener("change", (event) => {
+    myUsrName = myUsrNameInput.value;
+    localStorage["myUsrName"] = myUsrName;
+});
 
 //处理接收到的消息
-
 client.on("message", function (topic, payload) {
     console.log([topic, payload].join(": "));
     var obj = JSON.parse(payload);
@@ -26,7 +42,8 @@ client.on("message", function (topic, payload) {
                 decryptionKeys: myLocalKey.privateKey
             });
             console.log(decrypted); // 'Hello, World!'
-            outputArea.appendHTML(decrypted+"</br>");
+            var mmsg= decrypted+"</br>";
+            outputArea.appendHTML([obj.userName, mmsg].join(": "));
         })();
     }
 });
@@ -51,6 +68,15 @@ HTMLElement.prototype.appendHTML = function(html) {
 //初始化opengpg
 console.log(openpgp);
 
+if(localStorage["myLocalKey"]!=null){
+    myLocalKey=JSON.parse(localStorage["myLocalKey"]);
+    (async () => {
+        myLocalKey.publicKey = await openpgp.readKey({ armoredKey: myLocalKey.publicKeyArmored });
+        myLocalKey.privateKey = await openpgp.readPrivateKey({ armoredKey: myLocalKey.privateKeyArmored });
+        console.log("localStorage里反序列化之后的myLocalKey计算后的样子是：");
+        console.log(myLocalKey);
+    })();
+}else{
 (async () => {
     const { privateKey, publicKey, revocationCertificate } = await openpgp.generateKey({
         type: 'ecc', // Type of the key, defaults to ECC
@@ -66,11 +92,14 @@ console.log(openpgp);
     myLocalKey.privateKeyArmored=privateKey;
     myLocalKey.publicKeyArmored=publicKey;
     myLocalKey.revocationCertificateArmored=revocationCertificate;
+    console.log("第一次生成key未计算之前的样子");
+    console.log(myLocalKey);
+    localStorage["myLocalKey"]=JSON.stringify(myLocalKey);
 
     myLocalKey.publicKey = await openpgp.readKey({ armoredKey: publicKey });
     myLocalKey.privateKey = await openpgp.readPrivateKey({ armoredKey: privateKey });
-
 })();
+}//初始化key结束
 
 
 //清空按钮的处理过程
