@@ -10,11 +10,28 @@ var client = mqtt.connect('wss://test.mosquitto.org:8081');
 
 client.subscribe("/");
 
+//处理接收到的消息
+
 client.on("message", function (topic, payload) {
     console.log([topic, payload].join(": "));
-    outputArea.appendHTML(payload+"</br>");
+    var obj = JSON.parse(payload);
+    if(obj.type != null){
+        (async () => {
+            const message = await openpgp.readMessage({
+                armoredMessage: obj.msg // parse armored message
+            });
+            const { data: decrypted, signatures } = await openpgp.decrypt({
+                message,
+                verificationKeys: myLocalKey.publicKey, // optional
+                decryptionKeys: myLocalKey.privateKey
+            });
+            console.log(decrypted); // 'Hello, World!'
+            outputArea.appendHTML(decrypted+"</br>");
+        })();
+    }
 });
 
+//给结果元素上append内容的辅助函数
 //https://www.cnblogs.com/7qin/p/12117251.html
 HTMLElement.prototype.appendHTML = function(html) {
     var divTemp = document.createElement("div"), nodes = null
@@ -31,6 +48,7 @@ HTMLElement.prototype.appendHTML = function(html) {
     fragment = null;
 };
 
+//初始化opengpg
 console.log(openpgp);
 
 (async () => {
@@ -55,11 +73,13 @@ console.log(openpgp);
 })();
 
 
+//清空按钮的处理过程
 doButton.addEventListener("touchstart", (event) => {
     outputHtml = "";
     outputArea.innerHTML = "";
 });
 
+//发送按钮的处理过程
 sendButton.addEventListener("touchstart", (event) => {
     console.log(userMsg.value); 
     (async () => {
@@ -69,8 +89,7 @@ sendButton.addEventListener("touchstart", (event) => {
                 signingKeys: myLocalKey.privateKey // optional
             });
             console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
-            client.publish("/",JSON.stringify({userName:"lemonhall",msg:encrypted}));
+            client.publish("/",JSON.stringify({userName:"lemonhall",type:"encrypted",msg:encrypted}));
             userMsg.value="";
     })();
 });
-
