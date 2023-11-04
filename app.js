@@ -4,6 +4,7 @@ const userMsg = document.getElementById("user_msg");
 const sendButton = document.getElementById("send_msg");
 
 var outputHtml = "";
+var myLocalKey = {};
 
 var client = mqtt.connect('wss://test.mosquitto.org:8081');
 
@@ -30,19 +31,8 @@ HTMLElement.prototype.appendHTML = function(html) {
     fragment = null;
 };
 
-
-doButton.addEventListener("touchstart", (event) => {
-    outputHtml = "";
-    outputArea.innerHTML = "";
-});
-
-sendButton.addEventListener("touchstart", (event) => {
-    console.log(userMsg.value);
-    client.publish("/", userMsg.value);
-    userMsg.value="";
-});
-
 console.log(openpgp);
+
 (async () => {
     const { privateKey, publicKey, revocationCertificate } = await openpgp.generateKey({
         type: 'ecc', // Type of the key, defaults to ECC
@@ -54,4 +44,33 @@ console.log(openpgp);
     console.log(privateKey);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
     console.log(publicKey);      // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
     console.log(revocationCertificate); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+
+    myLocalKey.privateKeyArmored=privateKey;
+    myLocalKey.publicKeyArmored=publicKey;
+    myLocalKey.revocationCertificateArmored=revocationCertificate;
+
+    myLocalKey.publicKey = await openpgp.readKey({ armoredKey: publicKey });
+    myLocalKey.privateKey = await openpgp.readPrivateKey({ armoredKey: privateKey });
+
 })();
+
+
+doButton.addEventListener("touchstart", (event) => {
+    outputHtml = "";
+    outputArea.innerHTML = "";
+});
+
+sendButton.addEventListener("touchstart", (event) => {
+    console.log(userMsg.value); 
+    (async () => {
+            const encrypted = await openpgp.encrypt({
+                message: await openpgp.createMessage({ text: userMsg.value }), // input as Message object
+                encryptionKeys: myLocalKey.publicKey,
+                signingKeys: myLocalKey.privateKey // optional
+            });
+            console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+            client.publish("/",JSON.stringify({userName:"lemonhall",msg:encrypted}));
+            userMsg.value="";
+    })();
+});
+
