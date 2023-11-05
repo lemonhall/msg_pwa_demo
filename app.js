@@ -32,19 +32,25 @@ client.on("message", function (topic, payload) {
     console.log([topic, payload].join(": "));
     var obj = JSON.parse(payload);
     if(obj.type != null){
-        (async () => {
-            const message = await openpgp.readMessage({
-                armoredMessage: obj.msg // parse armored message
-            });
-            const { data: decrypted, signatures } = await openpgp.decrypt({
-                message,
-                verificationKeys: myLocalKey.publicKey, // optional
-                decryptionKeys: myLocalKey.privateKey
-            });
-            console.log(decrypted); // 'Hello, World!'
-            var mmsg= decrypted+"</br>";
+        //如果是自己发送的消息，那就简单了，就用自己的密钥去解码就好了
+        if(obj.userName == myUsrName){
+                (async () => {
+                    const message = await openpgp.readMessage({
+                        armoredMessage: obj.msg // parse armored message
+                    });
+                    const { data: decrypted, signatures } = await openpgp.decrypt({
+                        message,
+                        verificationKeys: myLocalKey.publicKey, // optional
+                        decryptionKeys: myLocalKey.privateKey
+                    });
+                    console.log(decrypted); // 'Hello, World!'
+                    var mmsg= decrypted+"</br>";
+                    outputArea.appendHTML([obj.userName, mmsg].join(": "));
+                })();
+        }else{
+            var mmsg= "该消息已加密，你还未得到对方授权，看不到该消息"+"</br>";
             outputArea.appendHTML([obj.userName, mmsg].join(": "));
-        })();
+        }
     }
 });
 
@@ -118,7 +124,7 @@ sendButton.addEventListener("touchstart", (event) => {
                 signingKeys: myLocalKey.privateKey // optional
             });
             console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
-            client.publish("/",JSON.stringify({userName:"lemonhall",type:"encrypted",msg:encrypted}));
+            client.publish("/",JSON.stringify({userName:myUsrName,type:"encrypted",msg:encrypted}));
             userMsg.value="";
     })();
 });
