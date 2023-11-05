@@ -119,3 +119,11 @@ sudo systemctl reload nginx
 
     <script src="openpgp.min.js"></script>
 
+14、写到一半儿，发现一个问题，pgp的加解密是针对1v1的场景的，那么，群聊的时候咋整？
+
+    https://stackoverflow.com/questions/597188/encryption-decryption-with-multiple-keys
+
+    https://github.com/openpgpjs/openpgpjs/blob/main/README.md#encrypt-and-decrypt-string-data-with-pgp-keys
+
+然后发现是可以走多签发机制
+

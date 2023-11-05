@@ -33,7 +33,7 @@ client.on("message", function (topic, payload) {
     var obj = JSON.parse(payload);
     if(obj.type != null){
         //如果是自己发送的消息，那就简单了，就用自己的密钥去解码就好了
-        if(obj.userName == myUsrName){
+        if(obj.userName == myUsrName && obj.type == "encrypted"){
                 (async () => {
                     const message = await openpgp.readMessage({
                         armoredMessage: obj.msg // parse armored message
@@ -47,12 +47,26 @@ client.on("message", function (topic, payload) {
                     var mmsg= decrypted+"</br>";
                     outputArea.appendHTML([obj.userName, mmsg].join(": "));
                 })();
-        }else{
-            var mmsg= "该消息已加密，你还未得到对方授权，看不到该消息"+"</br>";
+        }else if(obj.userName == myUsrName && obj.type == "requestPublicKey"){
+            //这是自己发送的给别人的要求需要公钥的信息，忽略就好了，不用管
+        }else if(obj.userName != myUsrName && obj.type == "encrypted"){
+            //这是别人发送的加密信息，查看本地有没有这个用户名所对应的公钥，如果有的话，那就是request过的，可以用自己的私钥解密的
+            //如果没有的话，就需要提示自己这个用户需要request一下公钥
+            var mmsg= "该消息已加密，你还未得到对方授权，所以看不到该消息，您可以申请对方对你的授权，但已加密信息因签发机制所限制，亦无法查看；"+
+                      "<a href='#' ontouchstart=\"requestPublicKey(\'"+obj.userName+"\')\">点击向该用户申请密钥</a>"+
+                      "</br>";
             outputArea.appendHTML([obj.userName, mmsg].join(": "));
         }
     }
 });
+
+//向其它用户申请对方的公钥来加密消息
+function requestPublicKey(name){
+    console.log("I am going to requst public user :"+name);
+    //向公开频道上索要公钥信息
+    client.publish("/",JSON.stringify({userName:myUsrName,type:"requestPublicKey",msg:name}));
+}
+
 
 //给结果元素上append内容的辅助函数
 //https://www.cnblogs.com/7qin/p/12117251.html
@@ -116,6 +130,7 @@ doButton.addEventListener("touchstart", (event) => {
 
 //发送按钮的处理过程
 sendButton.addEventListener("touchstart", (event) => {
+    console.log("发送按钮的处理过程");
     console.log(userMsg.value); 
     (async () => {
             const encrypted = await openpgp.encrypt({
