@@ -1,0 +1,223 @@
+/* 基础重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 安全区域适配 */
+body {
+  padding: 
+    env(safe-area-inset-top) 
+    env(safe-area-inset-right) 
+    env(safe-area-inset-bottom) 
+    env(safe-area-inset-left);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  background-color: #f7f7f9;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  color: #1a73e8;
+  margin-bottom: 16px;
+  font-size: 28px;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 2px solid #e6e6e6;
+  padding-bottom: 10px;
+}
+
+/* 用户名输入区域 */
+p {
+  margin: 10px 0;
+}
+
+input {
+  padding: 12px;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  font-size: 16px;
+  width: 100%;
+  max-width: 300px;
+  transition: border-color 0.3s ease;
+}
+
+input:focus {
+  border-color: #1a73e8;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+/* 聊天容器 */
+#output {
+  padding: 15px;
+  margin: 20px 0;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  flex: 1;
+  overflow-y: auto;
+  max-height: 50vh;
+  border: 1px solid #e6e6e6;
+}
+
+/* 消息样式 */
+.message {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  max-width: 80%;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease;
+}
+
+.sent {
+  background-color: #e3f2fd;
+  margin-left: auto;
+  border-bottom-right-radius: 4px;
+}
+
+.received {
+  background-color: #f1f1f1;
+  margin-right: auto;
+  border-bottom-left-radius: 4px;
+}
+
+/* 底部控制区 */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  position: sticky;
+  bottom: 0;
+  background-color: #f7f7f9;
+  padding: 10px 0;
+}
+
+/* 输入区域 */
+textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #d1d1d6;
+  border-radius: 24px;
+  resize: none;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+  flex: 1;
+}
+
+textarea:focus {
+  border-color: #1a73e8;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+/* 按钮样式 */
+button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 20px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover {
+  background-color: #1565c0;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+#dododo {
+  background-color: #f44336;
+  margin-bottom: 10px;
+}
+
+#dododo:hover {
+  background-color: #d32f2f;
+}
+
+/* 响应式设计 */
+@media (max-width: 600px) {
+  body {
+    padding: 15px;
+  }
+  
+  h1 {
+    font-size: 24px;
+  }
+}
+
+/* iPhone 12 Pro Max特定优化 */
+@media only screen and (device-width: 428px) and (device-height: 926px) {
+  body {
+    font-size: 18px;
+  }
+}
+
+/* 用户名样式 */
+.username {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+/* 消息内容样式 */
+.message-content {
+  line-height: 1.4;
+}
+
+/* 系统消息样式 */
+.message:has(.username:contains('系统')) {
+  background-color: #f0f4f9;
+  border-left: 3px solid #1a73e8;
+  color: #555;
+  font-style: italic;
+  margin: 8px auto;
+  max-width: 90%;
+}
+
+/* 用户信息区域 */
+.user-info {
+  background-color: white;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e6e6e6;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 链接样式 */
+a {
+  color: #1a73e8;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #0d47a1;
+  text-decoration: underline;
+}

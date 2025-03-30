@@ -1,11 +1,28 @@
 {
     "name": "聊天室",
+    "short_name": "加密聊天",
     "icons": [
       {
         "src": "icons/515.png",
         "type": "image/png",
         "sizes": "512x512"
+      },
+      {
+        "src": "icons/192.png",
+        "type": "image/png", 
+        "sizes": "192x192"
+      },
+      {
+        "src": "icons/180.png",
+        "type": "image/png",
+        "sizes": "180x180",
+        "purpose": "maskable any"
       }
     ],
-    "display" : "standalone"
+    "display": "standalone",
+    "theme_color": "#007aff",
+    "background_color": "#ffffff",
+    "start_url": "/",
+    "scope": "/",
+    "orientation": "portrait"
 }

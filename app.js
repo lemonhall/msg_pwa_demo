@@ -27,6 +27,29 @@ myUsrNameInput.addEventListener("change", (event) => {
     localStorage["myUsrName"] = myUsrName;
 });
 
+// 创建消息元素并添加到聊天区域
+function createMessageElement(userName, message, isSelf) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isSelf ? 'sent' : 'received'}`;
+    
+    const userSpan = document.createElement('span');
+    userSpan.className = 'username';
+    userSpan.textContent = userName;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.innerHTML = message;
+    
+    if (!isSelf) {
+        messageDiv.appendChild(userSpan);
+    }
+    messageDiv.appendChild(contentDiv);
+    
+    outputArea.appendChild(messageDiv);
+    // 自动滚动到底部
+    outputArea.scrollTop = outputArea.scrollHeight;
+}
+
 //尝试初始化publicKeysArmored，多公钥全局变量机制
 //https://github.com/openpgpjs/openpgpjs/blob/main/README.md#encrypt-and-decrypt-string-data-with-pgp-keys
 var PublicKeysArmoredString = [];
@@ -60,8 +83,7 @@ client.on("message", function (topic, payload) {
                         decryptionKeys: myLocalKey.privateKey
                     });
                     console.log(decrypted); // 'Hello, World!'
-                    var mmsg= decrypted+"</br>";
-                    outputArea.appendHTML([obj.userName, mmsg].join(": "));
+                    createMessageElement(obj.userName, decrypted, true);
                 })();
         }else if(obj.userName == myUsrName && obj.type == "requestPublicKey"){
             //这是自己发送的给别人的要求需要公钥的信息，忽略就好了，不用管
@@ -77,6 +99,10 @@ client.on("message", function (topic, payload) {
                 console.log('即将发送的公钥是：');
                 console.log(myLocalKey["publicKeyArmored"]);
                 client.publish("/",JSON.stringify({userName:myUsrName,type:"responePublicKey",msg:myLocalKey["publicKeyArmored"]}));
+                
+                // 显示系统消息
+                const systemMsg = `已同意与 ${obj.userName} 交换密钥`;
+                createMessageElement('系统', systemMsg, false);
               } else {
                 // 不同意，看是不是要返回一个no的信息
                 console.log('公钥获取请求被用户驳回了');
@@ -91,6 +117,10 @@ client.on("message", function (topic, payload) {
             constuctPublicKeysArmoredString();
             console.log("新构建好的多keys的公钥群字符串是：");
             console.log(PublicKeysArmoredString);
+            
+            // 显示系统消息
+            const systemMsg = `已收到 ${obj.userName} 的密钥，现在可以加密通信`;
+            createMessageElement('系统', systemMsg, false);
         }else if(obj.userName != myUsrName && obj.type == "encrypted"){
             //这是别人发送的加密信息，查看本地有没有这个用户名所对应的公钥，如果有的话，那就是request过的，可以用自己的私钥解密的
             //如果没有的话，就需要提示自己这个用户需要request一下公钥
@@ -104,15 +134,13 @@ client.on("message", function (topic, payload) {
                         decryptionKeys: myLocalKey.privateKey
                     });
                     console.log(decrypted); // 'Hello, World!'
-                    var mmsg= decrypted+"</br>";
-                    outputArea.appendHTML([obj.userName, mmsg].join(": "));
+                    createMessageElement(obj.userName, decrypted, false);
                 })();
             }else{
                 //如果我没有对方的公钥，那对方的消息我发送的时候肯定是没有带上的，那只能显示这个了
                 var mmsg= "该消息已加密，你还未得到对方授权，所以看不到该消息，您可以申请对方对你的授权，但已加密信息因签发机制所限制，亦无法查看；"+
-                        "<a href='#' ontouchstart=\"requestPublicKey(\'"+obj.userName+"\')\">点击向该用户申请密钥</a>"+
-                        "</br>";
-                outputArea.appendHTML([obj.userName, mmsg].join(": "));
+                        "<a href='#' onclick=\"requestPublicKey(\'"+obj.userName+"\')\">点击向该用户申请密钥</a>";
+                createMessageElement(obj.userName, mmsg, false);
             }
         }
     }
@@ -123,8 +151,33 @@ function requestPublicKey(name){
     console.log("I am going to requst public user :"+name);
     //向公开频道上索要公钥信息
     client.publish("/",JSON.stringify({userName:myUsrName,type:"requestPublicKey",msg:name}));
+    
+    // 显示系统消息
+    const systemMsg = `已向 ${name} 发送密钥请求`;
+    createMessageElement('系统', systemMsg, false);
 }
 
+// 初始化聊天界面
+function initChatUI() {
+    // 添加回车键发送消息功能
+    userMsg.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendButton.click();
+        }
+    });
+    
+    // 自动聚焦到输入框
+    setTimeout(() => {
+        userMsg.focus();
+    }, 500);
+    
+    // 添加系统欢迎消息
+    if (outputArea.children.length === 0) {
+        const welcomeMsg = '欢迎来到聊天室！请先设置您的用户名，然后开始聊天。';
+        createMessageElement('系统', welcomeMsg, false);
+    }
+}
 
 //给结果元素上append内容的辅助函数
 //https://www.cnblogs.com/7qin/p/12117251.html
@@ -188,15 +241,27 @@ if(localStorage["myLocalKey"]!=null){
 
 
 //清空按钮的处理过程
-doButton.addEventListener("touchstart", (event) => {
-    outputHtml = "";
+doButton.addEventListener("click", (event) => {
     outputArea.innerHTML = "";
+    // 重新添加欢迎消息
+    const welcomeMsg = '聊天记录已清空';
+    createMessageElement('系统', welcomeMsg, false);
 });
 
 //发送按钮的处理过程
-sendButton.addEventListener("touchstart", (event) => {
+sendButton.addEventListener("click", (event) => {
+    if (!userMsg.value.trim()) return; // 不发送空消息
+    
     console.log("发送按钮的处理过程");
     console.log(userMsg.value); 
+    
+    // 发送前先检查是否设置了用户名
+    if (!myUsrName) {
+        alert('请先设置您的用户名');
+        myUsrNameInput.focus();
+        return;
+    }
+    
     (async () => {
         const publicKeys = await Promise.all(PublicKeysArmoredString.map(armoredKey => openpgp.readKey({ armoredKey })));
         const message = await openpgp.createMessage({ text: userMsg.value });
@@ -210,3 +275,6 @@ sendButton.addEventListener("touchstart", (event) => {
         userMsg.value="";
     })();
 });
+
+// 初始化聊天UI
+document.addEventListener('DOMContentLoaded', initChatUI);
